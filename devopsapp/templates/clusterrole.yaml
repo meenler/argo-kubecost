@@ -16,6 +16,7 @@ rules:
       - persistentvolumes
       - persistentvolumeclaims
       - events
+      - configmaps
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources:
