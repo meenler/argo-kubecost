@@ -16,7 +16,7 @@ deployment:
 
 service:
   type: NodePort
-  port: 9090
+  port: 80
 
 serviceipc:
   enabled: false
@@ -35,19 +35,19 @@ probes:
   liveness:
     httpGet:
       path: /
-      port: 9090
+      port: 80
     periodSeconds: 30
     failureThreshold: 3
   readiness:
     httpGet:
       path: /
-      port: 9090
+      port: 80
     periodSeconds: 30
     failureThreshold: 3
   startup:
     httpGet:
       path: /
-      port: 9090
+      port: 80
     periodSeconds: 30
     failureThreshold: 30
 
