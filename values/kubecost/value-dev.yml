@@ -10,9 +10,9 @@ vault:
 
 deployment:
   dockerimage: ajaytripathy/kubecost:prod-master
-  env:
-    - name: RELEASE
-      value: 1.0.0
+  # env:
+  #   - name: RELEASE
+  #     value: 1.0.0
 
 service:
   type: NodePort
