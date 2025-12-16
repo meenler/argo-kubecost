@@ -9,10 +9,10 @@ vault:
   namespace: ""
 
 deployment:
-  dockerimage: ajaytripathy/kubecost:prod-master
-  # env:
-  #   - name: RELEASE
-  #     value: 1.0.0
+  dockerimage: gcr.io/kubecost1/frontend:prod-1.108.1
+  env:
+    - name: RELEASE
+      value: 1.0.0
 
 service:
   type: NodePort
