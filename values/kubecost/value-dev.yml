@@ -1,5 +1,28 @@
 # Kubecost values for local docker-desktop deployment
-# Based on official Kubecost Helm chart
+# Based on official Kubecost Helm chart v3
+
+# Frontend configuration
+frontend:
+  service:
+    type: NodePort
+    port: 9090
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+
+# Cost-model configuration
+costModel:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
 
 # Prometheus configuration
 prometheus:
@@ -14,24 +37,9 @@ prometheus:
         memory: "512Mi"
         cpu: "200m"
 
-# Kubecost cost-model configuration
-costModel:
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-    limits:
-      memory: "512Mi"
-      cpu: "200m"
-
 # Persistent volume
 persistentVolume:
   enabled: false
-
-# Service configuration
-service:
-  type: NodePort
-  port: 9090
 
 # Ingress
 ingress:
@@ -39,8 +47,3 @@ ingress:
 
 # Node selector
 nodeSelector: {}
-
-# Service Account
-serviceAccount:
-  create: true
-  annotations: {}
