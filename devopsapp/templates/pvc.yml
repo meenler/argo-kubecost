@@ -1,0 +1,15 @@
+{{- if .Values.persistentVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bdapp.fullname" . }}-pvc
+  namespace: {{ default "default" .Values.namespace }}
+  labels:
+    {{- include "bdapp.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistentVolume.size }}
+{{- end }}

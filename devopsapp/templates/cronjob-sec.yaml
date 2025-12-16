@@ -1,0 +1,38 @@
+{{- if ((.Values.cronjobsecondary).enabled) }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "bdapp.fullname" . }}-{{ default "secondary" .Values.cronjobsecondary.name }}
+  namespace: {{ default "default" .Values.namespace }}
+  labels:
+    {{- include "bdapp.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.cronjobsecondary.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            vault.security.banzaicloud.io/vault-addr: {{ .Values.vault.address | default "https://bdms-vault-public-vault-01b15ef6.18ed968b.z1.hashicorp.cloud:8200" | quote }}
+            vault.security.banzaicloud.io/vault-namespace: {{ if hasKey .Values.vault "namespace" }}{{ .Values.vault.namespace | quote }}{{ else }}"admin"{{ end }}
+            vault.security.banzaicloud.io/vault-agent: 'false'
+            vault.security.banzaicloud.io/vault-path: kubernetes/{{ .Values.environment }}" 
+            vault.security.banzaicloud.io/vault-role: application
+            vault.security.banzaicloud.io/vault-skip-verify: 'true'
+        spec:
+          containers:
+          - name: {{ include "bdapp.fullname" . }}
+            image: {{ .Values.cronjobsecondary.dockerimage }}
+            {{- with .Values.cronjobsecondary.env }}
+            env:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            imagePullPolicy: Always
+            command:
+            {{- range .Values.cronjobsecondary.command }}
+              - {{ . }}
+            {{- end }}
+          restartPolicy: Never
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+{{- end }}

@@ -1,0 +1,67 @@
+namespace: default
+environment: dev
+replicaCount: 1
+
+nodeSelector: {}
+
+vault:
+  address: "http://vault.vault.svc.cluster.local:8200"
+  namespace: ""
+
+deployment:
+  dockerimage: ajaytripathy/kubecost:prod-master
+  env:
+    - name: RELEASE
+      value: 1.0.0
+
+service:
+  type: NodePort
+  port: 9090
+
+serviceipc:
+  enabled: false
+
+ingress:
+  enabled: false
+  host: dev-api.bdms.tech
+  path: /admin-management
+  annotations:
+    konghq.com/plugins: custom-auth-dev
+
+virtualService:
+  enabled: false
+
+probes:
+  liveness:
+    httpGet:
+      path: /
+      port: 9090
+    periodSeconds: 30
+    failureThreshold: 3
+  readiness:
+    httpGet:
+      path: /
+      port: 9090
+    periodSeconds: 30
+    failureThreshold: 3
+  startup:
+    httpGet:
+      path: /
+      port: 9090
+    periodSeconds: 30
+    failureThreshold: 30
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "200m"
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+autoscaling:
+  enabled: false

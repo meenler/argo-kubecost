@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bdapp.fullname" . }}
+  namespace: {{ default "default" .Values.namespace }}
+  labels:
+    {{- include "bdapp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "bdapp.selectorLabels" . | nindent 6 }}
+  revisionHistoryLimit: 0
+  template:
+    metadata:
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: {{ .Values.vault.address | default "https://bdms-vault-public-vault-01b15ef6.18ed968b.z1.hashicorp.cloud:8200" | quote }}
+        vault.security.banzaicloud.io/vault-namespace: {{ if hasKey .Values.vault "namespace" }}{{ .Values.vault.namespace | quote }}{{ else }}"admin"{{ end }}
+        vault.security.banzaicloud.io/vault-agent: "false" 
+        vault.security.banzaicloud.io/vault-path: "kubernetes/bdms_{{ .Values.environment }}" 
+        vault.security.banzaicloud.io/vault-role: "application" 
+        vault.security.banzaicloud.io/vault-skip-verify: "true" 
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "bdapp.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "bdapp.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.deployment.dockerimage }}"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.deployment.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.deployment.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.liveness }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.readiness }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.persistentVolume.enabled }}
+          volumeMounts:
+            - mountPath: {{ .Values.persistentVolume.mountPath }}
+              name: {{ include "bdapp.fullname" . }}-storage
+          {{- end }}
+      {{- if .Values.persistentVolume.enabled }}
+      volumes:
+        - name: {{ include "bdapp.fullname" . }}-storage
+          persistentVolumeClaim:
+            claimName: {{ include "bdapp.fullname" . }}-pvc
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
