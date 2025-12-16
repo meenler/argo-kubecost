@@ -9,14 +9,16 @@ vault:
   namespace: ""
 
 deployment:
-  dockerimage: gcr.io/kubecost1/frontend:prod-1.108.1
+  dockerimage: gcr.io/kubecost1/cost-model:prod-1.108.1
   env:
     - name: RELEASE
       value: 1.0.0
+    - name: PROMETHEUS_SERVER_ENDPOINT
+      value: "http://prometheus-server.default.svc.cluster.local"
 
 service:
   type: NodePort
-  port: 80
+  port: 9090
 
 serviceipc:
   enabled: false
@@ -34,20 +36,20 @@ virtualService:
 probes:
   liveness:
     httpGet:
-      path: /
-      port: 80
+      path: /healthz
+      port: 9090
     periodSeconds: 30
     failureThreshold: 3
   readiness:
     httpGet:
-      path: /
-      port: 80
+      path: /healthz
+      port: 9090
     periodSeconds: 30
     failureThreshold: 3
   startup:
     httpGet:
-      path: /
-      port: 80
+      path: /healthz
+      port: 9090
     periodSeconds: 30
     failureThreshold: 30
 
