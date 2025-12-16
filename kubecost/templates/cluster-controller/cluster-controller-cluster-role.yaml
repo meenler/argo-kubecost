@@ -1,0 +1,67 @@
+{{- if (.Values.clusterController).enabled }}
+#
+# NOTE:
+# The following ClusterRole permissions are only created and assigned for the
+# cluster controller feature. They will not be added to any clusters by default.
+#
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kubecost.clusterController.name" . }}
+  labels:
+      {{- include "kubecost.commonLabels" . | nindent 4 }}
+rules:
+  {{- if .Values.clusterController.rbac.containerRequestRightSizing }}
+  - apiGroups: ['apps']
+    resources: ['deployments', 'daemonsets', 'statefulsets', 'replicasets']
+    verbs: ['get', 'patch']
+  - apiGroups: ['batch']
+    resources: ['cronjobs']
+    verbs: ['get', 'patch']
+  {{- end }}
+  {{- if .Values.clusterController.rbac.clusterRightSizing }}
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'update']
+  - apiGroups: ['']
+    resources: ['nodes']
+    verbs: ['get','list','patch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['delete', 'list', 'get']
+  - apiGroups: ['policy']
+    resources: ['pods/eviction']
+    verbs: ['create']
+  {{- end }}
+  {{- if .Values.clusterController.rbac.clusterTurndown }}
+  - apiGroups: ['kubecost.com']
+    resources: ['turndownschedules']
+    verbs: ['list', 'watch', 'update', 'delete', 'create']
+  - apiGroups: ['kubecost.com']
+    resources: ['turndownschedules/status']
+    verbs: ['update']
+  - apiGroups: ['']
+    resources: ['nodes']
+    verbs: ['get','list','patch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['delete', 'list', 'get']
+  - apiGroups: ['apps']
+    resources: ['deployments', 'daemonsets']
+    verbs: ['get', 'list', 'patch']
+  - apiGroups: ['batch']
+    resources: ['cronjobs', 'jobs']
+    verbs: ['list','patch']
+  - apiGroups: ['policy']
+    resources: ['pods/eviction']
+    verbs: ['create']
+  - apiGroups: ['', 'events.k8s.io']
+    resources: ['events']
+    verbs: ['create', 'patch']
+  {{- end }}
+  {{- if .Values.clusterController.rbac.namespaceTurndown }}
+  - apiGroups: ['*']
+    resources: ['*']
+    verbs: ['list', 'get', 'delete']
+  {{- end }}
+{{- end }}

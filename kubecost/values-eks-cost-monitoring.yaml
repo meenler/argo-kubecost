@@ -1,0 +1,25 @@
+global:
+  imageRegistry: public.ecr.aws
+frontend:
+  image:
+    repository: kubecost/frontend
+
+aggregator:
+  image:
+    repository: kubecost/cost-model
+
+forecasting:
+  image:
+    repository: kubecost/modeling
+
+networkCosts:
+  image:
+    repository: kubecost/network-costs
+
+clusterController:
+  image:
+    repository: kubecost/cluster-controller
+
+finopsagent:
+  image:
+    repository: kubecost/agent

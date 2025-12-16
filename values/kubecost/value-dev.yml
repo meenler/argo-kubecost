@@ -1,69 +1,46 @@
-namespace: default
-environment: dev
-replicaCount: 1
+# Kubecost values for local docker-desktop deployment
+# Based on official Kubecost Helm chart
 
-nodeSelector: {}
+# Prometheus configuration
+prometheus:
+  server:
+    persistentVolume:
+      enabled: false
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
 
-vault:
-  address: "http://vault.vault.svc.cluster.local:8200"
-  namespace: ""
+# Kubecost cost-model configuration
+costModel:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
 
-deployment:
-  dockerimage: gcr.io/kubecost1/cost-model:prod-1.108.1
-  env:
-    - name: RELEASE
-      value: 1.0.0
-    - name: PROMETHEUS_SERVER_ENDPOINT
-      value: "http://prometheus-server.default.svc.cluster.local"
+# Persistent volume
+persistentVolume:
+  enabled: false
 
+# Service configuration
 service:
   type: NodePort
   port: 9090
 
-serviceipc:
-  enabled: false
-
+# Ingress
 ingress:
   enabled: false
-  host: dev-api.bdms.tech
-  path: /admin-management
-  annotations:
-    konghq.com/plugins: custom-auth-dev
 
-virtualService:
-  enabled: false
+# Node selector
+nodeSelector: {}
 
-probes:
-  liveness:
-    httpGet:
-      path: /healthz
-      port: 9090
-    periodSeconds: 30
-    failureThreshold: 3
-  readiness:
-    httpGet:
-      path: /healthz
-      port: 9090
-    periodSeconds: 30
-    failureThreshold: 3
-  startup:
-    httpGet:
-      path: /healthz
-      port: 9090
-    periodSeconds: 30
-    failureThreshold: 30
-
-resources:
-  requests:
-    memory: "256Mi"
-    cpu: "100m"
-  limits:
-    memory: "512Mi"
-    cpu: "200m"
-
+# Service Account
 serviceAccount:
   create: true
   annotations: {}
-
-autoscaling:
-  enabled: false

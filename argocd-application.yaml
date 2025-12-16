@@ -9,14 +9,14 @@ spec:
   source:
     repoURL: https://github.com/meenler/argo-kubecost.git
     targetRevision: main
-    path: devopsapp
+    path: kubecost
     helm:
       valueFiles:
         - ../values/kubecost/value-dev.yml
   
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: kubecost
   
   syncPolicy:
     automated:

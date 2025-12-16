@@ -1,0 +1,13 @@
+{{- if and (not .Values.plugins.existingCustomSecret.enabled) .Values.plugins.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.plugins.secretName }}
+  labels:
+    {{- include "kubecost.commonLabels" . | nindent 4 }}
+data:
+  {{- range $key, $config := .Values.plugins.configs }}
+  {{ $key }}_config.json:
+    {{ $config | b64enc | indent 4}}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,198 @@
+{{- if (.Values.clusterController).enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubecost.clusterController.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubecost.commonLabels" . | nindent 4 }}
+    {{- if .Values.global.additionalLabels }}
+    {{- toYaml .Values.global.additionalLabels | nindent 4 }}
+    {{- end }}
+    {{- if .Values.clusterController.labels }}
+    {{- toYaml .Values.clusterController.labels | nindent 4 }}
+    {{- end }}
+  annotations:
+  {{- with .Values.global.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.clusterController.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+    checksum/configs: {{ include "kubecost.configsChecksum" . }}
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ include "kubecost.clusterController.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cluster-controller
+        app: {{ include "kubecost.clusterController.name" . }}
+        {{- if .Values.global.additionalLabels }}
+        {{- toYaml .Values.global.additionalLabels | nindent 8 }}
+        {{- end }}
+        {{- if .Values.clusterController.labels }}
+        {{- toYaml .Values.clusterController.labels | nindent 8 }}
+        {{- end }}
+      {{- with .Values.global.podAnnotations}}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.global.platforms.openshift.enabled }}
+      securityContext:
+      {{- toYaml .Values.global.platforms.openshift.securityContext | nindent 8 }}
+      {{- else if .Values.global.securityContext }}
+      securityContext:
+      {{- toYaml .Values.global.securityContext | nindent 8 }}
+      {{- else }}
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      {{- end }}
+      {{- if .Values.clusterController.priorityClassName }}
+      priorityClassName: "{{ .Values.clusterController.priorityClassName }}"
+      {{- end }}
+      containers:
+      - name: {{ include "kubecost.clusterController.name" . }}
+        image: {{ include "kubecost.clusterController.image" . }}
+        imagePullPolicy: {{ .Values.clusterController.imagePullPolicy }}
+        args:
+        {{- if (.Values.clusterController).legacyMode }}
+        - v1
+        {{- else }}
+        - v2
+        {{- end }}
+        securityContext:
+        {{- if .Values.clusterController.securityContext }}
+          {{- toYaml .Values.clusterController.securityContext | nindent 10 -}}
+        {{- else if .Values.global.containerSecurityContext }}
+          {{- toYaml .Values.global.containerSecurityContext | nindent 10 -}}
+        {{- end }}
+        volumeMounts:
+        - name: cluster-controller-keys
+          mountPath: /var/keys
+        {{- if not (.Values.clusterController).legacyMode }}
+        {{- if and (not (.Values.clusterController).storageConfigSecret) (not (.Values.clusterController).storageConfig) }}
+        - name: actions-storage
+          mountPath: /var/configs/actions/storage
+        - name: federated-storage-config
+          mountPath: /var/configs/actions/storage/actions-store.yaml
+          subPath: {{ include "kubecost.federatedStorage.fileName" . }}
+          readOnly: true
+        {{- else }}
+        - name: actions-bucket-config
+          mountPath: /var/configs/actions/storage
+          readOnly: true
+        {{- end }}
+        {{- end }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CLUSTER_ID
+          value: {{ include "kubecost.clusterId" . }}
+        - name: TURNDOWN_NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: TURNDOWN_DEPLOYMENT
+          value: {{ include "kubecost.clusterController.name" . }}
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/keys/service-key.json
+        - name: CC_LOG_LEVEL
+          value: {{ .Values.clusterController.logLevel | default "info" }}
+        {{- if not (.Values.clusterController).legacyMode }}
+        - name: LOG_LEVEL
+          value: {{ .Values.clusterController.logLevel | default "info" }}
+        - name: ACTIONS_BUCKET_CONFIG
+          value: /var/configs/actions/storage/actions-store.yaml
+        {{- end }}
+        - name: CC_KUBESCALER_COST_MODEL_PATH
+          {{- if .Values.clusterController.primaryKubecostURL }}
+          value: {{ .Values.clusterController.primaryKubecostURL }}/model
+          {{- else }}
+          value: http://{{ include "kubecost.frontend.serviceName" . }}.{{ .Release.Namespace }}:{{ .Values.frontend.service.targetPort | default 9090 }}/model
+          {{- end }}
+        - name: CC_CCL_COST_MODEL_PATH
+          {{- if .Values.clusterController.primaryKubecostURL }}
+          value: {{ .Values.clusterController.primaryKubecostURL }}/model
+          {{- else }}
+          value: http://{{ include "kubecost.frontend.serviceName" . }}.{{ .Release.Namespace }}:{{ .Values.frontend.service.targetPort | default 9090 }}/model
+          {{- end }}
+        {{- if .Values.clusterController.kubecostAPIKey }}
+        - name: KUBECOST_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.clusterController.secretName }}
+              key: kubecostAPIKey
+        {{- end }}
+        {{- if .Values.clusterController.kubescaler }}
+        - name: CC_KUBESCALER_DEFAULT_RESIZE_ALL
+          value: {{ .Values.clusterController.kubescaler.defaultResizeAll | default "false" | quote }}
+        {{- end }}
+        {{- if .Values.clusterController.extraEnv -}}
+        {{ toYaml .Values.clusterController.extraEnv | nindent 8 }}
+        {{- end }}
+        ports:
+        - name: http-server
+        {{- if not (.Values.clusterController).legacyMode }}
+          containerPort: 9732
+        {{- else }}
+          containerPort: 9731
+        {{- end }}
+        resources:
+          {{- toYaml .Values.clusterController.resources | nindent 12 }}
+      {{- include "kubecost.imagePullSecrets" . | nindent 6 }}
+      serviceAccount: {{ include "kubecost.clusterController.name" . }}
+      serviceAccountName: {{ include "kubecost.clusterController.name" . }}
+      {{- with .Values.clusterController.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.clusterController.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.clusterController.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: cluster-controller-keys
+        secret:
+          secretName: {{ .Values.clusterController.secretName | default "cluster-controller-service-key" }}
+          # The secret is optional because not all of cluster controller's
+          # functionality requires this secret. Cluster controller will
+          # partially or fully initialize based on the presence of these keys
+          # and their validity.
+          optional: true
+      {{- if not (.Values.clusterController).legacyMode }}
+      {{- if and (not (.Values.clusterController).storageConfigSecret) (not (.Values.clusterController).storageConfig) }}
+      - name: actions-storage
+        emptyDir: { }
+      - name: federated-storage-config
+        secret:
+          defaultMode: 420
+          secretName: {{ include "kubecost.federatedStorage.secretName" . }}
+      {{- else }}
+      - name: actions-bucket-config
+        secret:
+          secretName: {{ include "kubecost.clusterController.actionsBucketConfigSecretName" . }}
+      {{- end }}
+      {{- end }}
+{{- end }}

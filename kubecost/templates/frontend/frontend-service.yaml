@@ -1,0 +1,49 @@
+{{- if (.Values.frontend).enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubecost.frontend.serviceName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubecost.commonLabels" . | nindent 4 }}
+{{- if .Values.frontend.service.labels }}
+{{ toYaml .Values.frontend.service.labels | indent 4 }}
+{{- end }}
+{{- if .Values.frontend.service.annotations }}
+  annotations:
+{{ toYaml .Values.frontend.service.annotations | indent 4 }}
+{{- end }}
+spec:
+  selector:
+    {{- include "kubecost.frontend.selectorLabels" . | nindent 4 }}
+{{- if .Values.frontend.service.type }}
+  type: "{{ .Values.frontend.service.type }}"
+{{- else }}
+  type: ClusterIP
+{{- end }}
+{{- if (eq .Values.frontend.service.type "LoadBalancer") }}
+  {{- if .Values.frontend.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml .Values.frontend.service.loadBalancerSourceRanges | nindent 4 -}}
+  {{- end -}}
+{{- end }}
+  ports:
+    - name: tcp-frontend
+      {{- if (eq .Values.frontend.service.type "NodePort") }}
+      {{- if .Values.frontend.service.nodePort }}
+      nodePort: {{ .Values.frontend.service.nodePort }}
+      {{- end }}
+      {{- end }}
+      port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.service.targetPort }}
+{{- if .Values.frontend.service.sessionAffinity.enabled }}
+  sessionAffinity: ClientIP
+  {{- if .Values.frontend.service.sessionAffinity.timeoutSeconds }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ .Values.frontend.service.sessionAffinity.timeoutSeconds }}
+  {{- end }}
+{{- else }}
+  sessionAffinity: None
+{{- end }}
+{{- end }}

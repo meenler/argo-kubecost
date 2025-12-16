@@ -1,0 +1,6 @@
+nodeSelector:
+  kubernetes.io/os: linux
+
+networkCosts:
+  nodeSelector:
+    kubernetes.io/os: linux

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubecost.aggregator.cm.helmvalues.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubecost.commonLabels" . | nindent 4 }}
+data:
+  user-values.json: |
+    {{- .Values | toJson | nindent 4 }}
