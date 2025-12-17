@@ -86,7 +86,7 @@ costModel:
 
 # Ingress configuration
 ingress:
-  enabled: true
+  enabled: false
   host: dev-api.bdms.tech
   path: /kubecost
   className: "nginx"
