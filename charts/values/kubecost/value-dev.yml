@@ -1,11 +1,47 @@
-# Kubecost values for local docker-desktop deployment
-# Based on official Kubecost Helm chart v3
+# Kubecost values for dev environment
+namespace: kubecost
+environment: dev
+replicaCount: 1
+
+# Node selector for pod placement
+nodeSelector:
+  app: "bedee"
+
+# Vault configuration for secret management
+vault:
+  address: "https://vault-bedee.common.bdms.tech"
+  namespace: ""
 
 # Frontend configuration
 frontend:
   service:
-    type: NodePort
+    type: ClusterIP
     port: 9090
+  
+  # Health check probes
+  probes:
+    liveness:
+      httpGet:
+        path: /
+        port: 9090
+      periodSeconds: 10
+      failureThreshold: 3
+      initialDelaySeconds: 30
+    readiness:
+      httpGet:
+        path: /
+        port: 9090
+      periodSeconds: 10
+      failureThreshold: 3
+      initialDelaySeconds: 10
+    startup:
+      httpGet:
+        path: /
+        port: 9090
+      periodSeconds: 10
+      failureThreshold: 30
+      initialDelaySeconds: 0
+  
   resources:
     requests:
       memory: "256Mi"
@@ -16,6 +52,30 @@ frontend:
 
 # Cost-model configuration
 costModel:
+  # Health check probes
+  probes:
+    liveness:
+      httpGet:
+        path: /healthz
+        port: 9003
+      periodSeconds: 10
+      failureThreshold: 3
+      initialDelaySeconds: 30
+    readiness:
+      httpGet:
+        path: /healthz
+        port: 9003
+      periodSeconds: 10
+      failureThreshold: 3
+      initialDelaySeconds: 10
+    startup:
+      httpGet:
+        path: /healthz
+        port: 9003
+      periodSeconds: 10
+      failureThreshold: 30
+      initialDelaySeconds: 0
+  
   resources:
     requests:
       memory: "256Mi"
@@ -24,13 +84,53 @@ costModel:
       memory: "512Mi"
       cpu: "200m"
 
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9090
+
+# Ingress configuration
+ingress:
+  enabled: true
+  host: dev-api.bdms.tech
+  path: /kubecost
+  className: "nginx"
+
+# Virtual Service configuration (for Istio)
+virtualService:
+  enabled: false
+
 # Persistent volume
 persistentVolume:
   enabled: false
+  size: 10Gi
+  storageClass: ""
 
-# Ingress
-ingress:
+# Prometheus configuration
+prometheus:
+  enabled: true
+  server:
+    persistentVolume:
+      enabled: false
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: kubecost
+
+# Horizontal Pod Autoscaling
+autoscaling:
   enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
 
-# Node selector
-nodeSelector: {}
+# Resource limits and requests (global defaults)
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "200m"
