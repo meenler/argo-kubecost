@@ -101,13 +101,6 @@ persistentVolume:
   size: 10Gi
   storageClass: ""
 
-# Prometheus configuration
-prometheus:
-  enabled: true
-  server:
-    persistentVolume:
-      enabled: false
-
 # Service account configuration
 serviceAccount:
   create: true
