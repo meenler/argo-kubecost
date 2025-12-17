@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://github.com/meenler/argo-kubecost.git
     targetRevision: main
-    path: kubecost
+    path: charts/kubecost
     helm:
       valueFiles:
         - ../values/kubecost/value-uat.yml
