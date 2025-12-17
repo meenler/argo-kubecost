@@ -1,21 +1,29 @@
-# Kubecost Deployment Structure
+# BDMS Kubecost - Helm DevOps
 
-This repository contains Kubecost Helm chart with multi-environment support.
+Kubecost deployment ผ่าน ArgoCD สำหรับทุก environment (Dev, UAT, Production)
 
-## Structure
+## 📁 โครงสร้าง
 
 ```
 bdms-helm-devops/
-├── argocd-applications/
-│   ├── kubecost-dev.yaml       # Dev environment
-│   ├── kubecost-uat.yaml       # UAT environment
-│   └── kubecost-prod.yaml      # Production environment
-├── kubecost/                    # Kubecost Helm Chart v3.0.6
-└── values/
-    └── kubecost/
-        ├── value-dev.yml       # Dev configuration
-        ├── value-uat.yml       # UAT configuration
-        └── value-prod.yml      # Production configuration
+├── argocd-applications/          # ArgoCD Application manifests
+│   ├── kubecost-dev.yaml        # → Dev environment
+│   ├── kubecost-uat.yaml        # → UAT environment
+│   └── kubecost-prod.yaml       # → Production environment
+│
+├── charts/
+│   ├── kubecost/                # Kubecost Helm Chart
+│   │   ├── Chart.yaml           # Chart metadata
+│   │   ├── values.yaml          # Default values (base)
+│   │   ├── templates/           # Kubernetes manifests templates
+│   │   ├── charts/              # Sub-charts (finops-agent)
+│   │   └── crds/                # Custom Resource Definitions
+│   │
+│   └── values/
+│       └── kubecost/            # Environment-specific values
+│           ├── value-dev.yml    # Dev configuration
+│           ├── value-uat.yml    # UAT configuration
+│           └── value-prod.yml   # Production configuration
 ```
 
 ## Environments
@@ -44,9 +52,9 @@ bdms-helm-devops/
 - **High Availability:** 2 replicas
 - **Ingress:** kubecost.bdms.tech
 
-## Deployment
+## 🚀 การ Deploy
 
-### Deploy specific environment:
+### Deploy แยกตาม environment:
 ```bash
 # Development
 kubectl apply -f argocd-applications/kubecost-dev.yaml
@@ -58,19 +66,58 @@ kubectl apply -f argocd-applications/kubecost-uat.yaml
 kubectl apply -f argocd-applications/kubecost-prod.yaml
 ```
 
-### Deploy all environments:
+### Deploy ทั้งหมดพร้อมกัน:
 ```bash
 kubectl apply -f argocd-applications/
 ```
 
-## Access
+## 🔗 การเข้าถึง
 
-### Development (NodePort)
+| Environment | URL | Service Type | Namespace |
+|-------------|-----|--------------|-----------|
+| **Dev** | `http://localhost:<nodeport>` | NodePort | kubecost |
+| **UAT** | https://kubecost-uat.bdms.tech | LoadBalancer | kubecost-uat |
+| **Prod** | https://kubecost.bdms.tech | LoadBalancer | kubecost-prod |
+
+### ตรวจสอบ Service (Dev):
 ```bash
 kubectl get svc -n kubecost
-# Access via http://localhost:<nodeport>
 ```
 
-### UAT/Production (LoadBalancer)
-- UAT: https://kubecost-uat.bdms.tech
-- Production: https://kubecost.bdms.tech
+## 📝 การแก้ไข Configuration
+
+1. แก้ไขไฟล์ values ที่ต้องการ:
+   - `charts/values/kubecost/value-dev.yml`
+   - `charts/values/kubecost/value-uat.yml`
+   - `charts/values/kubecost/value-prod.yml`
+
+2. Commit และ push การเปลี่ยนแปลง
+
+3. ArgoCD จะ sync อัตโนมัติ (หรือ manual sync ใน ArgoCD UI)
+
+## 🛠️ การจัดการ
+
+### ตรวจสอบสถานะ ArgoCD:
+```bash
+kubectl get applications -n argocd
+```
+
+### ดู logs:
+```bash
+# Dev
+kubectl logs -n kubecost -l app=kubecost
+
+# UAT
+kubectl logs -n kubecost-uat -l app=kubecost
+
+# Prod
+kubectl logs -n kubecost-prod -l app=kubecost
+```
+
+### Force sync (manual):
+```bash
+# ใช้ ArgoCD CLI
+argocd app sync kubecost-dev
+argocd app sync kubecost-uat
+argocd app sync kubecost-prod
+```
