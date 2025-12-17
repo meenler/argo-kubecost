@@ -1,0 +1,42 @@
+# Kubecost values for Production environment
+
+# Frontend configuration
+frontend:
+  service:
+    type: LoadBalancer
+    port: 9090
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Cost-model configuration
+costModel:
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Persistent volume
+persistentVolume:
+  enabled: true
+  size: 50Gi
+
+# Ingress
+ingress:
+  enabled: true
+  hosts:
+    - kubecost.bdms.tech
+
+# Node selector
+nodeSelector:
+  environment: production
+
+# High availability
+replicaCount: 2

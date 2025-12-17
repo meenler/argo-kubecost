@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubecost-uat
+  namespace: argocd
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/meenler/argo-kubecost.git
+    targetRevision: main
+    path: kubecost
+    helm:
+      valueFiles:
+        - ../values/kubecost/value-uat.yml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubecost-uat
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

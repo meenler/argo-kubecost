@@ -1,0 +1,39 @@
+# Kubecost values for UAT environment
+
+# Frontend configuration
+frontend:
+  service:
+    type: LoadBalancer
+    port: 9090
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Cost-model configuration
+costModel:
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Persistent volume
+persistentVolume:
+  enabled: true
+  size: 10Gi
+
+# Ingress
+ingress:
+  enabled: true
+  hosts:
+    - kubecost-uat.bdms.tech
+
+# Node selector
+nodeSelector:
+  environment: uat
